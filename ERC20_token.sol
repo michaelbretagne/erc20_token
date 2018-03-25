@@ -6,6 +6,7 @@ contract BreizhCoin {
     string public constant symbol = "BZH";
     uint8  public constant decimals = 2;
     uint256 public totalSupply;
+    address public manager;
 
     mapping(address => uint256)  balances;
     mapping(address => mapping (address => uint256)) allowances;
@@ -15,11 +16,20 @@ contract BreizhCoin {
 
 
     function BreizhCoin(uint256 initSupply) public {
+        // Set manager;
+        manager = msg.sender;
         // Set the initial supply
         totalSupply = initSupply;
-        // Set the sender as the owner of all the initial set of tokens
+        // Set the sender as the owner/manager of all the initial set of tokens
         // Declare the balances mapping
         balances[msg.sender] = totalSupply;
+        
+    }
+
+    // Manager/Owner requirement    
+    modifier restricted() {
+        require(msg.sender == manager);
+        _;
     }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
@@ -87,6 +97,22 @@ contract BreizhCoin {
         // Emit a transfer event
         emit Transfer(_from, _to, _value);
 
+        return true;
+    }
+
+    // Function that increase the total supply. Can only be called by manager/owner
+    function increaseSupply(uint additional) public restricted returns (bool success) {
+        // Owner/manager gets the ownership of additional coins
+        balances[msg.sender] += additional;
+        return true;
+    }
+
+    // Function that decrease the total supply. Can only be called by manager/owner
+    function decreaseSupply(uint reduction) public restricted returns (bool success) {
+        // Check if manager/owner has more tokens than the reduction of tokens 
+        if (balances[msg.sender] < reduction) return false;
+        // Balance of owner/manger deducted
+        balances[msg.sender] -= reduction;
         return true;
     }
 
